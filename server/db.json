@@ -1,0 +1,47 @@
+{
+  "todos": [
+    {
+      "text": "sdfsdfsadf",
+      "completed": true,
+      "createdAt": 1787334118886,
+      "id": "IoYRp_nc6TA"
+    },
+    {
+      "text": "7fyg8huji",
+      "completed": true,
+      "createdAt": 1788003447274,
+      "id": "ARMnqsw3e8w"
+    },
+    {
+      "text": "zesrdxtfcgvh",
+      "completed": true,
+      "createdAt": 1788005817948,
+      "id": "v74wMgvbKAg"
+    },
+    {
+      "text": "xtrdfcghvjb",
+      "completed": true,
+      "createdAt": 1788005823461,
+      "id": "vNdxhkbLvAY"
+    },
+    {
+      "text": "Fhdhdgr",
+      "completed": false,
+      "createdAt": 1788007290454,
+      "id": "03DXGVhDEyc"
+    },
+    {
+      "text": "Jeudhehd",
+      "completed": false,
+      "createdAt": 1788007294282,
+      "id": "OTtVL2TxCmk"
+    },
+    {
+      "text": "jbhb",
+      "completed": false,
+      "createdAt": 1788007681330,
+      "id": "ke5qmvH-6_U"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}
