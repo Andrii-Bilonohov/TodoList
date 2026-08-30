@@ -24,34 +24,34 @@ export function TodoList({ todos, onToggle, onDelete, onEdit }: TodoListProps) {
   }
 
   return (
-      <FlatList
-        data={todos}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <TodoItem
-            todo={item}
-            onToggle={onToggle}
-            onDelete={onDelete}
-            onEdit={onEdit}
-          />
-        )}
-        contentContainerStyle={styles.todoList}
-      />
-    );
+    <FlatList
+      data={todos}
+      keyExtractor={(item) => item.id.toString()}
+      renderItem={({ item }) => (
+        <TodoItem
+          todo={item}
+          onToggle={onToggle}
+          onDelete={onDelete}
+          onEdit={onEdit}
+        />
+      )}
+      contentContainerStyle={styles.todoList}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
-    todoEmpty: {
-       textAlign: "center",
-       paddingVertical: 36,
-       paddingHorizontal: 16,
-    },
-    emptyText: {
-        fontSize: 16,
-        color: "#94a3b8",
-    },
-    todoList: {
-        flexDirection: "column",
-        gap: 8,
-    }
+  todoEmpty: {
+    textAlign: "center",
+    paddingVertical: 36,
+    paddingHorizontal: 16,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#94a3b8",
+  },
+  todoList: {
+    flexDirection: "column",
+    gap: 8,
+  }
 })

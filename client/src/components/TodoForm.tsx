@@ -1,52 +1,45 @@
-import { useState } from "react";
-import {
-  TextInput,
-  Pressable,
-  Text,
-  View,
-  StyleSheet,
-} from "react-native";
+import React, { useState } from "react";
+import { TextInput, Pressable, Text, View, StyleSheet } from "react-native";
+import { useTheme } from "@/hooks/useTheme";
 
 interface TodoFormProps {
   onAdd: (text: string) => Promise<void>;
   loading: boolean;
 }
 
-export function TodoForm({
-  onAdd,
-  loading,
-}: TodoFormProps) {
+export function TodoForm({ onAdd, loading }: TodoFormProps) {
+  const { colors } = useTheme();
   const [text, setText] = useState("");
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     const trimmed = text.trim();
-
     if (!trimmed || isSubmitting) return;
 
     try {
       setIsSubmitting(true);
-
       await onAdd(trimmed);
-
       setText("");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isDisabled =
-    !text.trim() ||
-    loading ||
-    isSubmitting;
+  const isDisabled = !text.trim() || loading || isSubmitting;
 
   return (
     <View style={styles.todoForm}>
       <TextInput
-        style={styles.todoInput}
+        style={[
+          styles.todoInput,
+          {
+            borderColor: colors.border,
+            backgroundColor: colors.todoInputBackground,
+            color: colors.mainText,
+          },
+        ]}
         placeholder="Що потрібно зробити?"
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor={colors.placeholderText}
         value={text}
         onChangeText={setText}
         editable={!loading && !isSubmitting}
@@ -58,16 +51,17 @@ export function TodoForm({
       <Pressable
         style={[
           styles.todoAddBtn,
-          isDisabled &&
-            styles.todoAddBtnDisabled,
+          {
+            backgroundColor: colors.buttonBackground,
+            shadowColor: colors.buttonBackground,
+          },
+          isDisabled && styles.todoAddBtnDisabled,
         ]}
         onPress={handleSubmit}
         disabled={isDisabled}
       >
-        <Text style={styles.todoAddBtnText}>
-          {isSubmitting
-            ? "Додаємо..."
-            : "Додати"}
+        <Text style={[styles.todoAddBtnText, { color: colors.white }]}>
+          {isSubmitting ? "Додаємо..." : "Додати"}
         </Text>
       </Pressable>
     </View>
@@ -86,23 +80,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     borderWidth: 1.5,
-    borderColor: "#e2e8f0",
     borderRadius: 10,
-    backgroundColor: "#f8fafc",
-    color: "#1e293b",
   },
   todoAddBtn: {
     paddingVertical: 12,
     paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#6366f1",
     borderRadius: 10,
-    shadowColor: "#6366f1",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 3,
@@ -111,7 +97,6 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   todoAddBtnText: {
-    color: "#ffffff",
     fontWeight: "600",
     fontSize: 15,
   },

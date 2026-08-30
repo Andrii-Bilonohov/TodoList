@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Alert,
   Text,
@@ -7,9 +7,9 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import {SafeAreaView} from "react-native-safe-area-context"
 
 import type { Todo } from "@/types";
+import { useTheme } from "@/hooks/useTheme";
 
 import {
   getTodos,
@@ -24,6 +24,8 @@ import { TodoForm } from "@/components/TodoForm";
 import { TodoList } from "@/components/TodoList";
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
+
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,14 +34,12 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       setError(null);
-
       const data = await getTodos();
       setTodos(data);
     } catch (err) {
       setError(
         "Не вдалося з'єднатися з json-server. Переконайтеся, що сервер запущено на порту 3000."
       );
-
       console.error(err);
     } finally {
       setLoading(false);
@@ -47,138 +47,74 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    let isMounted = true;
-
-    getTodos()
-      .then((data) => {
-        if (isMounted) {
-          setTodos(data);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(
-            "Не вдалося з'єднатися з json-server. Переконайтеся, що сервер запущено на порту 3000."
-          );
-        }
-
-        console.error(err);
-      })
-      .finally(() => {
-        if (isMounted) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
+    fetchTodos();
   }, []);
 
   const handleAdd = async (text: string) => {
     try {
       const newTodo = await addTodo(text);
-
       setTodos((prev) => [...prev, newTodo]);
     } catch (err) {
       Alert.alert(
         "Помилка",
         "Не вдалося додати завдання. Перевірте з'єднання з сервером."
       );
-
       console.error(err);
     }
   };
 
-  const handleToggle = async (
-    id: string,
-    completed: boolean
-  ) => {
+  const handleToggle = async (id: string, completed: boolean) => {
     try {
       // Optimistic update
       setTodos((prev) =>
-        prev.map((t) =>
-          t.id === id
-            ? { ...t, completed }
-            : t
-        )
+        prev.map((t) => (t.id === id ? { ...t, completed } : t))
       );
-
       await toggleTodo(id, completed);
     } catch (err) {
       // Revert on error
       setTodos((prev) =>
-        prev.map((t) =>
-          t.id === id
-            ? { ...t, completed: !completed }
-            : t
-        )
+        prev.map((t) => (t.id === id ? { ...t, completed: !completed } : t))
       );
-
-      Alert.alert(
-        "Помилка",
-        "Не вдалося оновити статус завдання."
-      );
-
+      Alert.alert("Помилка", "Не вдалося оновити статус завдання.");
       console.error(err);
     }
   };
 
-  const handleEdit = async (
-    id: string,
-    text: string
-  ) => {
+  const handleEdit = async (id: string, text: string) => {
     try {
       setTodos((prev) =>
-        prev.map((t) =>
-          t.id === id
-            ? { ...t, text }
-            : t
-        )
+        prev.map((t) => (t.id === id ? { ...t, text } : t))
       );
-
       await updateTodoText(id, text);
     } catch (err) {
       fetchTodos();
-
-      Alert.alert(
-        "Помилка",
-        "Не вдалося оновити текст завдання."
-      );
-
+      Alert.alert("Помилка", "Не вдалося оновити текст завдання.");
       console.error(err);
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      setTodos((prev) =>
-        prev.filter((t) => t.id !== id)
-      );
-
+      setTodos((prev) => prev.filter((t) => t.id !== id));
       await deleteTodo(id);
     } catch (err) {
       fetchTodos();
-
-      Alert.alert(
-        "Помилка",
-        "Не вдалося видалити завдання."
-      );
-
+      Alert.alert("Помилка", "Не вдалося видалити завдання.");
       console.error(err);
     }
   };
 
   const completedCount = useMemo(
-    () =>
-      todos.filter((t) => t.completed).length,
+    () => todos.filter((t) => t.completed).length,
     [todos]
   );
 
   return (
-    <SafeAreaView style={styles.appContainer}>
-      <View style={styles.todoCard}>
+    <View style={[styles.appContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.todoCard, {
+        backgroundColor: colors.cardBackground,
+        borderColor: colors.border
+      }]}>
 
         <Header
           totalCount={todos.length}
@@ -186,28 +122,32 @@ export default function HomeScreen() {
         />
 
         {error && (
-          <View style={styles.errorBanner}>
+          <View style={[styles.errorBanner, {
+            backgroundColor: colors.errorBackground,
+            borderColor: colors.errorBorder
+          }]}>
             <View style={styles.errorContent}>
-              <Text style={styles.errorTitle}>
+              <Text style={[styles.errorTitle, { color: colors.errorText }]}>
                 ⚠️ Помилка з'єднання:
               </Text>
-
-              <Text style={styles.errorText}>
+              <Text style={[styles.errorText, { color: colors.errorText }]}>
                 {error}
               </Text>
-
               <View style={styles.serverTip}>
-                <Text style={styles.serverTipText}>
+                <Text style={[styles.serverTipText, {
+                  backgroundColor: colors.errorBackground,
+                  color: colors.errorText
+                }]}>
                   cd server && npm start
                 </Text>
               </View>
             </View>
 
             <Pressable
-              style={styles.retryBtn}
+              style={[styles.retryBtn, { backgroundColor: colors.retryButtonBackground }]}
               onPress={fetchTodos}
             >
-              <Text style={styles.retryText}>
+              <Text style={[styles.retryText, { color: colors.white }]}>
                 Повторити
               </Text>
             </Pressable>
@@ -223,10 +163,9 @@ export default function HomeScreen() {
           <View style={styles.todoLoading}>
             <ActivityIndicator
               size="large"
-              color="#6366f1"
+              color={colors.buttonBackground}
             />
-
-            <Text style={styles.loadingText}>
+            <Text style={[styles.loadingText, { color: colors.subText }]}>
               Завантаження завдань...
             </Text>
           </View>
@@ -240,25 +179,21 @@ export default function HomeScreen() {
         )}
 
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   appContainer: {
     flex: 1,
-    backgroundColor: "#f5f7fb",
     padding: 16,
   },
   todoCard: {
     flex: 1,
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     paddingVertical: 32,
     paddingHorizontal: 28,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 10,
@@ -271,9 +206,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#fef2f2",
     borderWidth: 1,
-    borderColor: "#fecaca",
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 18,
@@ -285,32 +218,26 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     fontWeight: "700",
-    color: "#991b1b",
     marginBottom: 4,
   },
   errorText: {
-    color: "#991b1b",
     fontSize: 14,
   },
   serverTip: {
     marginTop: 6,
   },
   serverTipText: {
-    backgroundColor: "#fee2e2",
     paddingHorizontal: 6,
     paddingVertical: 2,
-    color: "#991b1b",
     fontSize: 12,
     fontFamily: "monospace",
   },
   retryBtn: {
-    backgroundColor: "#dc2626",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
   },
   retryText: {
-    color: "#ffffff",
     fontWeight: "600",
     fontSize: 13,
   },
@@ -321,7 +248,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: "#64748b",
     fontSize: 14,
   },
 });
