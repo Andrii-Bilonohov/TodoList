@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { useTheme } from "@/hooks/useTheme";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
 
 function MainLayout() {
   const { colors, isDarkMode } = useTheme();
@@ -19,12 +20,20 @@ function MainLayout() {
   );
 }
 
+const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!,
+  {
+    unsavedChangesWarning: false,
+  }
+);
+
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <MainLayout />
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <ConvexProvider client={convex}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <MainLayout />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </ConvexProvider>
   );
 }

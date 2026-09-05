@@ -5,9 +5,9 @@ import type { Todo } from "@/types";
 
 interface TodoItemProps {
   todo: Todo;
-  onToggle: (id: string, completed: boolean) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
-  onEdit: (id: string, text: string) => Promise<void>;
+  onToggle: () => Promise<void>;
+  onDelete: () => Promise<void>;
+  onEdit: (text: string) => Promise<void>;
 }
 
 export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
@@ -15,6 +15,8 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(todo.text);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const isTodoCompleted = (todo as any).isCompleted || todo.completed;
 
   const handleSave = async () => {
     const trimmed = editText.trim();
@@ -28,7 +30,9 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
     if (trimmed !== todo.text) {
       try {
         setIsUpdating(true);
-        await onEdit(todo.id, trimmed);
+        await onEdit(trimmed);
+      } catch (e) {
+        console.error(e);
       } finally {
         setIsUpdating(false);
         setIsEditing(false);
@@ -39,50 +43,21 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
   };
 
   return (
-    <View
-      style={[
-        styles.todoItem,
-        {
-          backgroundColor: colors.todoInputBackground,
-          borderColor: colors.border,
-        },
-        isUpdating && styles.todoItemUpdating,
-      ]}
-    >
+    <View style={[styles.todoItem, { backgroundColor: colors.todoInputBackground || colors.cardBackground, borderColor: colors.border }, isUpdating && styles.todoItemUpdating]}>
+
       <Pressable
         style={[styles.checkboxContainer, isUpdating && styles.disabled]}
-        onPress={() => onToggle(todo.id, !todo.completed)}
+        onPress={onToggle}
         disabled={isUpdating}
       >
-        <View
-          style={[
-            styles.checkmark,
-            {
-              backgroundColor: colors.cardBackground,
-              borderColor: colors.placeholderText,
-            },
-            todo.completed && {
-              backgroundColor: colors.green,
-              borderColor: colors.green,
-            },
-          ]}
-        >
-          {todo.completed && (
-            <Text style={[styles.checkmarkText, { color: colors.white }]}>✓</Text>
-          )}
+        <View style={[styles.checkmark, { backgroundColor: colors.cardBackground, borderColor: colors.placeholderText }, isTodoCompleted && { backgroundColor: colors.green || "#10b981", borderColor: colors.green || "#10b981" }]}>
+          {isTodoCompleted && <Text style={[styles.checkmarkText, { color: colors.white }]}>✓</Text>}
         </View>
       </Pressable>
 
       {isEditing ? (
         <TextInput
-          style={[
-            styles.todoEditInput,
-            {
-              color: colors.mainText,
-              backgroundColor: colors.cardBackground,
-              borderColor: colors.buttonBackground,
-            },
-          ]}
+          style={[styles.todoEditInput, { color: colors.mainText, backgroundColor: colors.cardBackground, borderColor: colors.buttonBackground }]}
           value={editText}
           onChangeText={setEditText}
           onBlur={handleSave}
@@ -98,16 +73,7 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
           onLongPress={() => setIsEditing(true)}
           disabled={isUpdating}
         >
-          <Text
-            style={[
-              styles.todoText,
-              { color: colors.mainText },
-              todo.completed && [
-                styles.todoTextCompleted,
-                { color: colors.colorCompleted },
-              ],
-            ]}
-          >
+          <Text style={[styles.todoText, { color: colors.mainText }, isTodoCompleted && [styles.todoTextCompleted, { color: colors.colorCompleted || colors.subText }]]}>
             {todo.text}
           </Text>
         </Pressable>
@@ -115,20 +81,12 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }: TodoItemProps) {
 
       <View style={styles.todoActions}>
         {!isEditing && (
-          <Pressable
-            style={styles.actionBtn}
-            onPress={() => setIsEditing(true)}
-            disabled={isUpdating}
-          >
+          <Pressable style={styles.actionBtn} onPress={() => setIsEditing(true)} disabled={isUpdating}>
             <Text style={styles.actionText}>✏️</Text>
           </Pressable>
         )}
 
-        <Pressable
-          style={styles.actionBtn}
-          onPress={() => onDelete(todo.id)}
-          disabled={isUpdating}
-        >
+        <Pressable style={styles.actionBtn} onPress={onDelete} disabled={isUpdating}>
           <Text style={styles.actionText}>🗑️</Text>
         </Pressable>
       </View>
@@ -144,17 +102,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 10,
     borderWidth: 1,
-    gap: 12,
+    gap: 12
   },
   todoItemUpdating: {
-    opacity: 0.6,
+    opacity: 0.6
   },
   disabled: {
-    opacity: 0.6,
+    opacity: 0.6
   },
   checkboxContainer: {
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "center"
   },
   checkmark: {
     width: 20,
@@ -162,20 +120,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderRadius: 6,
+    borderRadius: 6
   },
   checkmarkText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "700"
   },
   todoTextContainer: {
-    flex: 1,
+    flex: 1
   },
   todoText: {
-    fontSize: 16,
+    fontSize: 16
   },
   todoTextCompleted: {
-    textDecorationLine: "line-through",
+    textDecorationLine: "line-through"
   },
   todoEditInput: {
     flex: 1,
@@ -183,16 +141,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontSize: 16,
     borderRadius: 6,
-    borderWidth: 1.5,
+    borderWidth: 1.5
   },
   todoActions: {
     flexDirection: "row",
-    gap: 12,
+    gap: 12
   },
   actionBtn: {
-    padding: 4,
+    padding: 4
   },
   actionText: {
-    fontSize: 16,
-  },
+    fontSize: 16
+  }
 });

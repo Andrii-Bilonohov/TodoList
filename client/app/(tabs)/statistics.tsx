@@ -1,18 +1,16 @@
-import React, { useState, useCallback } from "react";
+import React from "react";
 import {
     StyleSheet,
     View,
     Text,
     ActivityIndicator,
-    TouchableOpacity,
     ScrollView,
     Dimensions,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { getTodos } from "@/services/api";
 import { useTheme } from "@/hooks/useTheme";
-import type { Todo } from "@/types";
-import { useFocusEffect } from "expo-router";
+import { useQuery } from "convex/react";
+import { api } from "convex/_generated/api";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
@@ -20,38 +18,20 @@ const CARD_WIDTH = (width - 48) / 2;
 export default function StatisticsScreen() {
     const { colors } = useTheme();
 
-    const [todos, setTodos] = useState<Todo[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const stats = useQuery(api.todos.getStats);
+    const loading = stats === undefined;
 
-    const fetchStats = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const data = await getTodos();
-            setTodos(data);
-        } catch (err: any) {
-            setError(err.message || "Не вдалося завантажити статистику");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useFocusEffect(
-        useCallback(() => {
-            fetchStats();
-        }, [])
-    );
-
-    const total = todos.length;
-    const completed = todos.filter((t) => t.completed).length;
-    const active = total - completed;
-    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const total = stats?.total ?? 0;
+    const completed = stats?.completed ?? 0;
+    const active = stats?.active ?? 0;
+    const completionRate = stats?.percentage ?? 0;
 
     const radius = 50;
     const strokeWidth = 10;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (completionRate / 100) * circumference;
+
+    const performanceEmoji = completionRate > 70 ? "🔥" : completionRate > 30 ? "⚡" : "💤";
 
     if (loading) {
         return (
@@ -61,27 +41,13 @@ export default function StatisticsScreen() {
         );
     }
 
-    if (error) {
-        return (
-            <View style={[styles.center, { backgroundColor: colors.background, padding: 24 }]}>
-                <View style={[styles.errorCard, { backgroundColor: colors.errorBackground, borderColor: colors.errorBorder }]}>
-                    <Text style={[styles.errorText, { color: colors.errorText }]}>{error}</Text>
-                </View>
-                <TouchableOpacity
-                    style={[styles.retryButton, { backgroundColor: colors.retryButtonBackground }]}
-                    onPress={fetchStats}
-                >
-                    <Text style={[styles.retryText, { color: colors.white }]}>Повторити спробу</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
-
     return (
-        <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScrollView
+            style={[styles.container, { backgroundColor: colors.background }]}
+            showsVerticalScrollIndicator={false}
+        >
             <Text style={[styles.title, { color: colors.mainText }]}>Статистика</Text>
-
-            <View style={[styles.chartCard, { backgroundColor: colors.cardBackground }]}>
+            <View style={[styles.chartCard, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
                 <View style={styles.chartContainer}>
                     <Svg width="120" height="120" viewBox="0 0 120 120">
                         <Circle
@@ -91,12 +57,13 @@ export default function StatisticsScreen() {
                             stroke={colors.border}
                             strokeWidth={strokeWidth}
                             fill="transparent"
+                            opacity={0.3}
                         />
                         <Circle
                             cx="60"
                             cy="60"
                             r={radius}
-                            stroke={colors.green}
+                            stroke={colors.green || "#10b981"}
                             strokeWidth={strokeWidth}
                             fill="transparent"
                             strokeDasharray={circumference}
@@ -106,9 +73,12 @@ export default function StatisticsScreen() {
                         />
                     </Svg>
                     <View style={styles.chartTextContainer}>
-                        <Text style={[styles.chartPercentage, { color: colors.mainText }]}>{completionRate}%</Text>
+                        <Text style={[styles.chartPercentage, { color: colors.mainText }]}>
+                            {completionRate}%
+                        </Text>
                     </View>
                 </View>
+                
                 <View style={styles.chartInfo}>
                     <Text style={[styles.chartTitle, { color: colors.mainText }]}>Прогрес виконання</Text>
                     <Text style={[styles.chartSub, { color: colors.subText }]}>
@@ -118,26 +88,24 @@ export default function StatisticsScreen() {
             </View>
 
             <View style={styles.grid}>
-                <View style={[styles.statCard, { backgroundColor: colors.cardBackground, width: CARD_WIDTH }]}>
+                <View style={[styles.statCard, { backgroundColor: colors.cardBackground, width: CARD_WIDTH, borderColor: colors.border }]}>
                     <Text style={[styles.statLabel, { color: colors.subText }]}>Всього</Text>
                     <Text style={[styles.statValue, { color: colors.mainText }]}>{total}</Text>
                 </View>
 
-                <View style={[styles.statCard, { backgroundColor: colors.cardBackground, width: CARD_WIDTH }]}>
+                <View style={[styles.statCard, { backgroundColor: colors.cardBackground, width: CARD_WIDTH, borderColor: colors.border }]}>
                     <Text style={[styles.statLabel, { color: colors.subText }]}>Активні</Text>
                     <Text style={[styles.statValue, { color: colors.buttonBackground }]}>{active}</Text>
                 </View>
 
-                <View style={[styles.statCard, { backgroundColor: colors.cardBackground, width: CARD_WIDTH }]}>
+                <View style={[styles.statCard, { backgroundColor: colors.cardBackground, width: CARD_WIDTH, borderColor: colors.border }]}>
                     <Text style={[styles.statLabel, { color: colors.subText }]}>Завершені</Text>
-                    <Text style={[styles.statValue, { color: colors.green }]}>{completed}</Text>
+                    <Text style={[styles.statValue, { color: colors.green || "#10b981" }]}>{completed}</Text>
                 </View>
 
-                <View style={[styles.statCard, { backgroundColor: colors.cardBackground, width: CARD_WIDTH }]}>
+                <View style={[styles.statCard, { backgroundColor: colors.cardBackground, width: CARD_WIDTH, borderColor: colors.border }]}>
                     <Text style={[styles.statLabel, { color: colors.subText }]}>Ефективність</Text>
-                    <Text style={[styles.statValue, { color: colors.mainText }]}>
-                        {completionRate > 70 ? "🔥" : completionRate > 30 ? "⚡" : "💤"}
-                    </Text>
+                    <Text style={[styles.statValue, { color: colors.mainText }]}>{performanceEmoji}</Text>
                 </View>
             </View>
         </ScrollView>
@@ -166,10 +134,10 @@ const styles = StyleSheet.create({
         padding: 20,
         borderRadius: 16,
         marginBottom: 16,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
+        borderWidth: 1,
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,
-        shadowRadius: 8,
+        shadowRadius: 10,
         elevation: 2,
     },
     chartContainer: {
@@ -208,10 +176,10 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 16,
         marginBottom: 16,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
+        borderWidth: 1,
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,
-        shadowRadius: 8,
+        shadowRadius: 10,
         elevation: 2,
     },
     statLabel: {
@@ -222,26 +190,5 @@ const styles = StyleSheet.create({
     statValue: {
         fontSize: 24,
         fontWeight: "700",
-    },
-    errorCard: {
-        borderWidth: 1,
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 16,
-        width: "100%",
-    },
-    errorText: {
-        fontSize: 14,
-        textAlign: "center",
-        fontWeight: "500",
-    },
-    retryButton: {
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 12,
-    },
-    retryText: {
-        fontSize: 16,
-        fontWeight: "600",
     },
 });

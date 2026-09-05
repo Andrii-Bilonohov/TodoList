@@ -1,17 +1,19 @@
 import type { Todo } from "@/types";
-import { TodoItem } from "./TodoItem";
 import {
-  Text,
-  View,
+  FlatList,
   StyleSheet,
-  FlatList
+  Text,
+  View
 } from "react-native";
+import { TodoItem } from "@/components/TodoItem";
+
+import type { Id } from "convex/_generated/dataModel";
 
 interface TodoListProps {
   todos: Todo[];
-  onToggle: (id: string, completed: boolean) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
-  onEdit: (id: string, text: string) => Promise<void>;
+  onToggle: (id: Id<"todos">) => Promise<void>;
+  onDelete: (id: Id<"todos">) => Promise<void>;
+  onEdit: (id: Id<"todos">, text: string) => Promise<void>;
 }
 
 export function TodoList({ todos, onToggle, onDelete, onEdit }: TodoListProps) {
@@ -26,15 +28,25 @@ export function TodoList({ todos, onToggle, onDelete, onEdit }: TodoListProps) {
   return (
     <FlatList
       data={todos}
-      keyExtractor={(item) => item.id.toString()}
-      renderItem={({ item }) => (
-        <TodoItem
-          todo={item}
-          onToggle={onToggle}
-          onDelete={onDelete}
-          onEdit={onEdit}
-        />
-      )}
+      keyExtractor={(item: any) => item._id || item.id}
+      renderItem={({ item }: { item: any }) => {
+        const actualId = item._id || item.id;
+
+        return (
+          <TodoItem
+            todo={item}
+            onToggle={async () => {
+              if (actualId) await onToggle(actualId);
+            }}
+            onDelete={async () => {
+              if (actualId) await onDelete(actualId);
+            }}
+            onEdit={async (text: string) => {
+              if (actualId) await onEdit(actualId, text);
+            }}
+          />
+        );
+      }}
       contentContainerStyle={styles.todoList}
     />
   );
@@ -42,16 +54,17 @@ export function TodoList({ todos, onToggle, onDelete, onEdit }: TodoListProps) {
 
 const styles = StyleSheet.create({
   todoEmpty: {
-    textAlign: "center",
     paddingVertical: 36,
     paddingHorizontal: 16,
+    alignItems: "center",
   },
   emptyText: {
     fontSize: 16,
     color: "#94a3b8",
+    textAlign: "center",
   },
   todoList: {
     flexDirection: "column",
     gap: 8,
   }
-})
+});
